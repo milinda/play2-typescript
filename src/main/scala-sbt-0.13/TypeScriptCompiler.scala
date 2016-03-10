@@ -1,5 +1,8 @@
 package com.github.mumoshu.play2.typescript
 
+import java.util.Base64
+
+import com.google.common.io.BaseEncoding
 import play.PlayExceptions.AssetCompilationException
 import java.io.File
 import scala.collection.JavaConverters._
@@ -31,6 +34,7 @@ object TypeScriptCompiler {
         Seq("tsc")
       val tempOut = createTempDir()
       val outJsFileName = tsFile.getName.replaceAll("\\.ts$", ".js")
+      val outJsMapFileName = tsFile.getName.replaceAll("\\.ts$", ".js.map")
 
       def pairedOptions(options: Seq[String]): Seq[String] = {
         options match {
@@ -58,11 +62,21 @@ object TypeScriptCompiler {
           parent.foldLeft(Path(tempOut))(_ / _) / outJsFileName
         }
       }
-      val outJsContent = outJsFilePaths.find(_.isFile).map(_.string)
 
+      val outJsMapFilePaths = {
+        val parents = Path.fromString(tsFile.getAbsolutePath).parents.reverse.map(_.name).filter(_.length > 0).tails
+        parents.toList.sortBy(_.size).map { parent =>
+          parent.foldLeft(Path(tempOut))(_ / _) / outJsMapFileName
+        }
+      }
+
+      val outJsContent = outJsFilePaths.find(_.isFile).map(_.string)
+      val sourceMapContent = outJsMapFilePaths.find(_.isFile).map(_.string)
+
+      val inlineSourceMapContent = outJsMapFileName.r.replaceFirstIn(outJsContent.get, toJsonData(sourceMapContent.get))
       assert(outJsContent.isDefined, "One of those files should exist: " + outJsFilePaths)
 
-      val tsOutput = outJsContent.get.replaceAll("\\r\\n", System.getProperty("line.separator")).replaceAll("\\r", "\n")
+      val tsOutput = inlineSourceMapContent.replaceAll("\\r\\n", System.getProperty("line.separator")).replaceAll("\\r", "\n")
 
 //      val declarationsFiles = if (writeDeclarations)
 //        List(new File(tsFile.getAbsolutePath.replace("\\.ts$", ".d.ts")))
@@ -74,6 +88,10 @@ object TypeScriptCompiler {
         throw AssetCompilationException(e.file.orElse(Some(tsFile)), "TypeScript compiler: " + e.message, Some(e.line), Some(e.column))
       }
     }
+  }
+
+  private def toJsonData(jsonContent: String): String = {
+    "data:application/json;base64," + Base64.getEncoder.encodeToString(jsonContent.getBytes) + "\n"
   }
 
   private def makeDependenciesList(tsFile: File): Seq[String] = {
