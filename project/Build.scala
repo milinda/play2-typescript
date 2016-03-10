@@ -26,34 +26,40 @@ object PluginBuild extends Build {
     },
     organization := "com.github.mumoshu",
     publishTo <<= version { v: String =>
-      val nexus = "https://oss.sonatype.org/"
+      val nexus = "https://nexus.htrc.illinois.edu/"
       if (v.trim.endsWith("SNAPSHOT"))
-        Some("snapshots" at nexus + "content/repositories/snapshots")
+        Some("snapshots" at nexus + "content/repositories/snapshots/")
       else
-        Some("releases" at nexus + "service/local/staging/deploy/maven2")
+        Some("releases" at nexus + "content/repositories/releases/")
     },
-    version := "0.3.0-RC2-SNAPSHOT",
+    credentials += Credentials(Path.userHome / ".m2" / ".credentials"),
+    version := "0.3.0-RC1-sourcemap-patch",
     publishMavenStyle := true,
     publishArtifact in Test := false,
     pomIncludeRepository := { _ => false },
     pomExtra := (
-      <url>https://github.com/mumoshu/play2-typescript</url>
+      <url>https://github.com/milinda/play2-typescript</url>
         <licenses>
           <license>
             <name>Apache v2 License</name>
-            <url>https://github.com/mumoshu/play2-typescript/blob/master/LICENSE</url>
+            <url>https://github.com/milinda/play2-typescript/blob/master/LICENSE</url>
             <distribution>repo</distribution>
           </license>
         </licenses>
         <scm>
-          <url>git@github.com:mumoshu/play2-typescript.git</url>
-          <connection>scm:git:git@github.com:mumoshu/play2-typescript.git</connection>
+          <url>git@github.com:milinda/play2-typescript.git</url>
+          <connection>scm:git:git@github.com:milinda/play2-typescript.git</connection>
         </scm>
         <developers>
           <developer>
             <id>you</id>
             <name>KUOKA Yusuke</name>
             <url>https://github.com/mumoshu</url>
+          </developer>
+          <developer>
+            <id>mi</id>
+            <name>Milinda Pathirage</name>
+            <url>https://github.com/milinda</url>
           </developer>
         </developers>
       ),
